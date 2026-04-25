@@ -1,7 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User
+from apps.users.db.user_model import UserInterest
 
+class UserInterestInline(admin.TabularInline):
+    model = UserInterest
+    extra = 1 
+    fields = ['interest', 'date_added']
+    readonly_fields = ['date_added']  
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -66,6 +72,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('last_login', 'date_joined')
         }),
     )
+    inlines = [UserInterestInline]
 
     add_fieldsets = (
         (None, {
