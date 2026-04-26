@@ -12,7 +12,7 @@ class UserInterestInline(admin.TabularInline):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = [
-        'username',
+        'phone_number',
         'first_name',
         'last_name',
         'age',
@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
         'is_active',
         'is_staff',
     ]
-    list_display_links = ['username', 'first_name', 'last_name']
+    list_display_links = ['phone_number', 'first_name', 'last_name']
 
     list_filter = [
         'gender',
@@ -33,7 +33,7 @@ class UserAdmin(BaseUserAdmin):
     ]
 
     search_fields = [
-        'username',
+        'phone_number',
         'first_name',
         'last_name',
         'city',
@@ -43,7 +43,7 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('username', 'password')
+            'fields': ('phone_number', 'password')
         }),
         ('Personal Information', {
             'fields': (
@@ -78,7 +78,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': (
-                'username',
+                'phone_number',
                 'password1',
                 'password2',
                 'date_of_birth',
