@@ -1,1 +1,2 @@
 from .admin_panel.user_admin_panel import UserAdmin
+from .admin_panel.interest_admin_panel import InterestAdmin
