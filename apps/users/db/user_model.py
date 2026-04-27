@@ -7,7 +7,6 @@ from django.contrib.auth.models import (
 from django.utils import timezone 
 from django.utils.translation import gettext_lazy as _ 
 from apps.users.db.interest_model import Interest
-from jdatetime import date as jdate
 
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
@@ -44,9 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    first_name = models.CharField(max_length=150, blank=True, verbose_name=_("First name"))
-    last_name = models.CharField(max_length=150, blank=True, verbose_name=_("Last name"))
-    email = models.EmailField(blank=True, verbose_name=_("Email"))
+    first_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("First name"))
+    last_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("Last name"))
 
     profile_picture = models.ImageField(
         upload_to="profile_pictures/", 
@@ -55,8 +53,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True 
     )
 
-    date_of_birth = models.DateField(
-        verbose_name=_("Birth date"), 
+    age = models.IntegerField(
+        verbose_name=_("Age"), 
         null=True, 
         blank=True 
     )
@@ -65,24 +63,31 @@ class User(AbstractBaseUser, PermissionsMixin):
         max_length=255, 
         choices=Gender.choices, 
         verbose_name=_("Gender"), 
-        default=Gender.MALE 
+        default=Gender.MALE, 
+        blank=True,
+        null=True
     ) 
 
     city = models.CharField(
         max_length=255, 
         verbose_name=_("City"), 
+        blank=True,
+        null=True
     )
 
     bio = models.TextField(
         max_length=500, 
         verbose_name=_("Biography"), 
-        blank=True 
+        blank=True, 
+        null=True
     )
 
     interests = models.ManyToManyField(
         Interest,
         through="UserInterest",
-        verbose_name=_('Interests')
+        verbose_name=_('Interests'), 
+        null=True, 
+        blank=True
     ) 
 
     def __str__(self):
@@ -91,21 +96,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         if f_name or l_name: 
             return f"{f_name} {l_name}".strip() 
         return self.phone_number
-    
-    @property
-    def age(self):
-        if not self.date_of_birth:
-            return None
-
-        today_gregorian = timezone.now().date()
-        today_jalali = jdate.fromgregorian(date=today_gregorian)
-
-        birth_jalali = jdate.fromgregorian(date=self.date_of_birth)
-
-        age = today_jalali.year - birth_jalali.year
-        if (today_jalali.month, today_jalali.day) < (birth_jalali.month, birth_jalali.day):
-            age -= 1
-        return age
     
 class UserInterest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
