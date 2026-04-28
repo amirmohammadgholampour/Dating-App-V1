@@ -49,8 +49,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': (
                 'first_name',
                 'last_name',
-                'email',
-                'date_of_birth',
+                'age', 
                 'gender',
                 'bio',
                 'profile_picture',
@@ -81,7 +80,7 @@ class UserAdmin(BaseUserAdmin):
                 'phone_number',
                 'password1',
                 'password2',
-                'date_of_birth',
+                'age', 
                 'gender',
                 'city',
                 'bio',
