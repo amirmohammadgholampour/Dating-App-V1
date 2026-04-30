@@ -1,1 +1,1 @@
-from .api.serializers.users_serializer import GetUserSerializer
+from .api.serializers.users_serializer import *
