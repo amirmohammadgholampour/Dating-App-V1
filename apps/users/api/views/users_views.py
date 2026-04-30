@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 
 from ...models import User 
-from ..serializers.users_serializer import GetUserSerializer
+from ...serializers import GetUserSerializer
 
 @swagger_auto_schema(
     method="GET", 
