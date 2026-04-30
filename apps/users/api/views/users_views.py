@@ -9,13 +9,13 @@ from drf_yasg.utils import swagger_auto_schema
 
 from ...models import User 
 from ...serializers import (
-    GetUserSerializer, 
-    PostUserSerializer
+    UserReadSerializer, 
+    UserSerializer
 )
 
 @swagger_auto_schema(
     method="GET", 
-    responses={200: GetUserSerializer}, 
+    responses={200: UserReadSerializer}, 
     operation_description="Get the logged-in user profile", 
     operation_summary="My Profile", 
     tags=["Users"]
@@ -25,7 +25,7 @@ from ...serializers import (
 def user_profile(request): 
     req_user = request.user
     user = User.objects.get(id=req_user.id) 
-    serializer = GetUserSerializer(user) 
+    serializer = UserReadSerializer(user) 
     return Response({
         "message": "User Profile", 
         "data": serializer.data
@@ -33,7 +33,7 @@ def user_profile(request):
 
 @swagger_auto_schema(
     method="POST",
-    request_body=PostUserSerializer,
+    request_body=UserSerializer,
     responses={
         201: openapi.Response(
             description="User is registered successfully.",
@@ -60,12 +60,12 @@ def register(request):
             "message": "You already registered."
         }, status=status.HTTP_400_BAD_REQUEST) 
     
-    serializer = PostUserSerializer(data=request.data) 
+    serializer = UserSerializer(data=request.data) 
     if serializer.is_valid(): 
         user = serializer.save() 
         return Response({
             "message": "You have successfully registered.", 
-            "data": GetUserSerializer(user).data
+            "data": UserReadSerializer(user).data
         }, status=status.HTTP_201_CREATED) 
     else: 
         return Response({

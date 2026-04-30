@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from ...models import User, UserInterest, Interest
 
-class GetUserSerializer(serializers.ModelSerializer): 
+class UserReadSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = User
         fields = [
@@ -11,7 +11,7 @@ class GetUserSerializer(serializers.ModelSerializer):
         ]
 
 
-class PostUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, 
         required=True,
