@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone 
 from django.utils.translation import gettext_lazy as _ 
+from django.core.exceptions import ValidationError
 from apps.users.db.interest_model import Interest
 
 class UserManager(BaseUserManager):
@@ -28,10 +29,37 @@ class User(AbstractBaseUser, PermissionsMixin):
         FEMALE = "female" 
         OTHER = "other" 
 
+    def validation_iran_phone_number(value): 
+        if not isinstance(value, str): 
+            raise ValidationError(
+                _("Phone number must be a string."), 
+                code="invalid_type" 
+            )
+        
+        if len(value) != 11: 
+            raise ValidationError(
+                _("Phone number must be exactly 11 digits."), 
+                params={"length": len(value)}, 
+                code="invalid_length" 
+            )
+        
+        if not value.isdigit(): 
+            raise ValidationError(
+                _("Phone number must contain only digits (0-9)."),
+                code="invalid_chars"
+            )
+        
+        if not value.startswith("09"): 
+            raise ValidationError(
+                _("Phone number must start with 09."),
+                code='invalid_prefix'
+            )
+
     phone_number = models.CharField(
         max_length=11,
         unique=True,
-        verbose_name=_("Phone number")
+        verbose_name=_("Phone number"), 
+        validators=[validation_iran_phone_number]
     )
 
     is_active = models.BooleanField(default=True)
