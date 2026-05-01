@@ -1,6 +1,6 @@
 venv
 run-dev.sh
-
+.vscode
 *__pycache__
 *__init__.py
 profile_pictures
