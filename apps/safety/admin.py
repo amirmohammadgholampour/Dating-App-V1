@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+from apps.safety.admin_panel.report_admin import *
