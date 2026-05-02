@@ -3,11 +3,13 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from ..models import User
 from apps.users.db.user_model import UserInterest
 
+
 class UserInterestInline(admin.TabularInline):
     model = UserInterest
-    extra = 1 
+    extra = 1
     fields = ['interest', 'date_added']
-    readonly_fields = ['date_added']  
+    readonly_fields = ['date_added']
+
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -17,6 +19,7 @@ class UserAdmin(BaseUserAdmin):
         'last_name',
         'age',
         'city',
+        'province',
         'gender',
         'is_active',
         'is_staff',
@@ -25,6 +28,7 @@ class UserAdmin(BaseUserAdmin):
 
     list_filter = [
         'gender',
+        'province',
         'city',
         'is_active',
         'is_staff',
@@ -36,10 +40,13 @@ class UserAdmin(BaseUserAdmin):
         'phone_number',
         'first_name',
         'last_name',
-        'city',
+        'city__name',
+        'province__name',
     ]
 
     ordering = ['-date_joined']
+
+    autocomplete_fields = ['city', 'province']
 
     fieldsets = (
         (None, {
@@ -49,14 +56,14 @@ class UserAdmin(BaseUserAdmin):
             'fields': (
                 'first_name',
                 'last_name',
-                'age', 
+                'age',
                 'gender',
                 'bio',
                 'profile_picture',
             )
         }),
         ('Location', {
-            'fields': ('city',)
+            'fields': ('province', 'city')
         }),
         ('Permissions', {
             'fields': (
@@ -71,6 +78,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('last_login', 'date_joined')
         }),
     )
+
     inlines = [UserInterestInline]
 
     add_fieldsets = (
@@ -80,8 +88,9 @@ class UserAdmin(BaseUserAdmin):
                 'phone_number',
                 'password1',
                 'password2',
-                'age', 
+                'age',
                 'gender',
+                'province',
                 'city',
                 'bio',
                 'profile_picture',
