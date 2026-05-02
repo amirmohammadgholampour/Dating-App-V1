@@ -96,11 +96,21 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True
     ) 
 
-    city = models.CharField(
-        max_length=255, 
-        verbose_name=_("City"), 
+    province = models.ForeignKey(
+        "Province",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        null=True
+        related_name='users',
+        verbose_name=_("Province")
+    )
+    city = models.ForeignKey(
+        "City",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users',
+        verbose_name=_("City (Shahrestan)")
     )
 
     bio = models.TextField(
@@ -114,7 +124,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         Interest,
         through="UserInterest",
         verbose_name=_('Interests'), 
-        null=True, 
         blank=True
     ) 
 
