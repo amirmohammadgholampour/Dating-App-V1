@@ -14,6 +14,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # ====== Application definition ======
 INSTALLED_APPS = [
+    'django_daisy', 
     'django.contrib.admin',
     'django.contrib.humanize',
 
