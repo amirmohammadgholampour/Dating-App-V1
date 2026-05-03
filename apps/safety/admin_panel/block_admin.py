@@ -36,8 +36,3 @@ class BlockAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['created_at']
-    
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ['blocker', 'blocked']
-        return self.readonly_fields
