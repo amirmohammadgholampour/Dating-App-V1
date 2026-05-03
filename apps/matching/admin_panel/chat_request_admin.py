@@ -41,8 +41,3 @@ class ChatRequestAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['created_at', 'updated_at']
-    
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ['from_user', 'to_user']
-        return self.readonly_fields
