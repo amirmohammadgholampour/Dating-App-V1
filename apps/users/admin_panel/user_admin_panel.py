@@ -46,8 +46,6 @@ class UserAdmin(BaseUserAdmin):
 
     ordering = ['-date_joined']
 
-    autocomplete_fields = ['city', 'province']
-
     fieldsets = (
         (None, {
             'fields': ('phone_number', 'password')
