@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+from apps.matching.api.views.discover_view import *
