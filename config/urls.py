@@ -37,6 +37,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include("apps.users.urls")), 
+    path("api/", include("apps.matching.urls")), 
 
 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
