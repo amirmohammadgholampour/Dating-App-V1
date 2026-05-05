@@ -16,6 +16,7 @@ class ProfileCardSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'first_name',
+            'last_name', 
             'age',
             'gender',
             'city_name',
