@@ -40,3 +40,98 @@ def recieved_requests(request):
         "data": serializer.data, 
         "count": chat_requests.count()
     }, status=status.HTTP_200_OK) 
+
+
+@swagger_auto_schema(
+    method="POST",
+    responses={
+        200: openapi.Response(
+            description="Request accepted, conversation created",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'conversation_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                }
+            )
+        ),
+        400: openapi.Response(description="Request not found or already processed"),
+        401: openapi.Response(description="Authentication required"),
+        403: openapi.Response(description="Not your request to accept"),
+    },
+    operation_description="Accept a pending chat request and create a conversation.",
+    operation_summary="Accept Chat Request",
+    tags=['Matching']
+)
+@api_view(["POST"]) 
+@permission_classes([IsAuthenticated]) 
+def accept_request(request, pk): 
+    """
+    POST /api/chat-requests/{id}/accept/
+    Accept a pending chat request and create a conversation.
+    """
+    user = request.user
+    try: 
+        chat_request = ChatRequest.objects.get(
+            id = pk, 
+            to_user = user, 
+            status = "pending"
+        )
+    except ChatRequest.DoesNotExist:
+        return Response({
+            "message": "Request not found or already processed."
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    conversation = chat_request.accept() 
+
+    return Response({
+        "message": "Requested accepted successfully.", 
+        "conversation_id": conversation.id
+    }, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method="POST",
+    responses={
+        200: openapi.Response(
+            description="Request rejected",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                }
+            )
+        ),
+        400: openapi.Response(description="Request not found or already processed"),
+        401: openapi.Response(description="Authentication required"),
+        403: openapi.Response(description="Not your request to reject"),
+    },
+    operation_description="Reject a pending chat request.",
+    operation_summary="Reject Chat Request",
+    tags=['Matching']
+)
+@api_view(["POST"]) 
+@permission_classes([IsAuthenticated]) 
+def reject_request(request, pk): 
+    """
+    POST /api/chat-requests/{id}/reject/
+    Reject a pending chat request.
+    """
+    try:
+        chat_request = ChatRequest.objects.get(
+            id=pk,
+            to_user=request.user,
+            status='pending'
+        )
+    except ChatRequest.DoesNotExist:
+        return Response(
+            {"message": "Request not found or already processed."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    chat_request.reject()
+
+    return Response(
+        {"message": "Request rejected successfully."},
+        status=status.HTTP_200_OK
+    )
