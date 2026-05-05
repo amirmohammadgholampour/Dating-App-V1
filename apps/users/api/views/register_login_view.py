@@ -1,44 +1,16 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response 
 from rest_framework import status 
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken 
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework.permissions import BasePermission 
+from rest_framework_simplejwt.tokens import RefreshToken  
 from django.contrib.auth import authenticate 
 
 from drf_yasg import openapi 
 from drf_yasg.utils import swagger_auto_schema 
 
-from ...models import User 
-from ...serializers import (
-    UserReadSerializer, 
-    UserSerializer
-)
-
-class NotAuthenticated(BasePermission):
-    message = "You are already logged in. Please logout first."
-    
-    def has_permission(self, request, view):
-        return not request.user.is_authenticated
-
-@swagger_auto_schema(
-    method="GET", 
-    responses={200: UserReadSerializer}, 
-    operation_description="Get the logged-in user profile", 
-    operation_summary="My Profile", 
-    tags=["Users"]
-)
-@api_view(["GET"]) 
-@permission_classes([IsAuthenticated])
-def user_profile(request): 
-    req_user = request.user
-    user = User.objects.get(id=req_user.id) 
-    serializer = UserReadSerializer(user) 
-    return Response({
-        "message": "User Profile", 
-        "data": serializer.data
-    }, status=status.HTTP_200_OK) 
+from apps.users.models import User 
+from apps.users.api.serializers.user_read_serializer import UserReadSerializer
+from apps.users.api.serializers.users_serializer import UserSerializer
+from apps.users.api.permissions.not_auth import NotAuthenticated
 
 @swagger_auto_schema(
     method="POST",
@@ -192,154 +164,5 @@ def login_or_register(request):
         
         return Response(
             {"message": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-@swagger_auto_schema(
-    method="put",
-    request_body=UserSerializer,
-    responses={
-        200: openapi.Response(
-            description="Profile updated successfully.",
-            schema=UserReadSerializer()
-        ),
-        400: openapi.Response(
-            description="Invalid data.",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'errors': openapi.Schema(type=openapi.TYPE_OBJECT)
-                }
-            )
-        ),
-        401: openapi.Response(description="Authentication required"),
-    },
-    operation_description="Full profile update. All fields must be provided.",
-    operation_summary="Update profile (PUT)",
-    tags=['Users']
-)
-@swagger_auto_schema(
-    method="patch",
-    request_body=UserSerializer,
-    responses={
-        200: openapi.Response(
-            description="Profile partially updated.",
-            schema=UserReadSerializer()
-        ),
-        400: openapi.Response(description="Invalid data."),
-        401: openapi.Response(description="Authentication required"),
-    },
-    operation_description="Partial profile update. Only send fields to change.",
-    operation_summary="Update profile (PATCH)",
-    tags=['Users']
-)
-@api_view(["PUT", "PATCH"])
-@permission_classes([IsAuthenticated])
-def update_profile(request):
-    partial = request.method == "PATCH"
-    
-    serializer = UserSerializer(
-        instance=request.user,
-        data=request.data,
-        partial=partial
-    )
-    
-    if serializer.is_valid():
-        user = serializer.save()
-        return Response(
-            {
-                "message": "Profile updated successfully",
-                "data": UserReadSerializer(user).data
-            },
-            status=status.HTTP_200_OK
-        )
-    
-    return Response(
-        {"errors": serializer.errors},
-        status=status.HTTP_400_BAD_REQUEST
-    )
-
-
-@swagger_auto_schema(
-    method="delete",
-    responses={
-        204: openapi.Response(description="Account deleted successfully"),
-        401: openapi.Response(description="Authentication required"),
-    },
-    operation_description="Delete current user account (soft delete - sets is_active=False).",
-    operation_summary="Delete Account",
-    tags=['Users']
-)
-@api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
-def delete_account(request):
-    """
-    DELETE /api/users/profile/delete/
-    Soft delete the current user's account.
-    Tokens remain valid but user cannot interact anymore.
-    """
-    user = request.user
-    user.delete()
-
-    return Response(
-        {"message": "Account deleted successfully."},
-        status=status.HTTP_204_NO_CONTENT
-    )
-
-
-@swagger_auto_schema(
-    method="post",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['refresh'],
-        properties={
-            'refresh': openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="Refresh token to blacklist"
-            ),
-        }
-    ),
-    responses={
-        200: openapi.Response(
-            description="Logout successful",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                }
-            )
-        ),
-        400: openapi.Response(description="Invalid token"),
-        401: openapi.Response(description="Authentication required"),
-    },
-    operation_description="Logout by blacklisting the refresh token.",
-    operation_summary="Logout",
-    tags=['Users']
-)
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def logout(request):
-    """
-    POST /api/auth/logout/
-    Blacklist the refresh token to prevent further access.
-    """
-    refresh_token = request.data.get("refresh")
-
-    if not refresh_token:
-        return Response(
-            {"message": "Refresh token is required."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-        return Response(
-            {"message": "Logout successful."},
-            status=status.HTTP_200_OK
-        )
-    except TokenError:
-        return Response(
-            {"message": "Invalid or expired token."},
             status=status.HTTP_400_BAD_REQUEST
         )

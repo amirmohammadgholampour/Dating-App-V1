@@ -1,1 +1,0 @@
-from .api.serializers.users_serializer import *
