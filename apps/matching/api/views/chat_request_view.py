@@ -7,7 +7,6 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi 
 
 from apps.matching.models import ChatRequest 
-from apps.chat.models import Conversation 
 from apps.matching.api.serializers.chat_request_serializer import ReceivedRequestSerializer 
 
 
