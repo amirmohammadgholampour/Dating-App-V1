@@ -4,7 +4,7 @@ from apps.users.models import City
 
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
-    list_display = ['id', 'city_id', 'name', 'province']
+    list_display = ['id', 'city_id', 'name', 'province', 'province_id']
     list_filter = ['province']
     search_fields = ['name', 'city_id', 'province__name']
     ordering = ['province__name', 'name']
