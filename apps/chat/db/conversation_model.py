@@ -31,3 +31,19 @@ class Conversation(models.Model):
 
     def __str__(self):
         return f"Conversation between {self.user1} and {self.user2}"
+
+    def get_other_user(self, current_user):
+        """Return the other user in the conversation."""
+        if current_user == self.user1:
+            return self.user2
+        return self.user1
+
+    def get_last_message(self):
+        """Return the most recent message."""
+        return self.messages.order_by('-sent_at').first()
+
+    def get_unread_count(self, user):
+        """Count unread messages for a specific user."""
+        return self.messages.filter(
+            read_at__isnull=True
+        ).exclude(sender=user).count()
