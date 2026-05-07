@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+from apps.chat.api.views.conversation_list_view import my_conversations
