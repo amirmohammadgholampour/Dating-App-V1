@@ -38,6 +38,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include("apps.users.urls")), 
     path("api/", include("apps.matching.urls")), 
+    path("api/chat/", include("apps.chat.urls")), 
 
 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
