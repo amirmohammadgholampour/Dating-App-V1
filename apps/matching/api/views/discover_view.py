@@ -18,6 +18,7 @@ from apps.matching.api.serializers.discover_serializer import ProfileCardSeriali
 from apps.users.models import User, Interest
 from apps.matching.models import Swipe, ChatRequest 
 from apps.safety.models import Block 
+from apps.chat.models import Conversation
 
 
 @api_view(["GET"])
@@ -40,7 +41,22 @@ def discover_view(request):
         blocked=user
     ).values_list('blocker_id', flat=True)
 
-    exclude_ids = set(already_swiped_ids) | set(blocked_ids) | set(blocked_by_ids) | {user.id}
+    conversation_partner_ids = set()
+    my_conversations = Conversation.objects.filter(
+        Q(user1=user) | Q(user2=user)
+    )
+    for conv in my_conversations:
+        conversation_partner_ids.add(conv.user1_id)
+        conversation_partner_ids.add(conv.user2_id)
+    conversation_partner_ids.discard(user.id)
+
+    exclude_ids = (
+        set(already_swiped_ids) |
+        set(blocked_ids) | 
+        set(blocked_by_ids) | 
+        conversation_partner_ids |
+        {user.id}
+    )
 
     profiles = User.objects.filter(
         is_active=True
