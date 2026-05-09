@@ -9,6 +9,8 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.chat.models import Conversation 
 from apps.chat.api.serializers.conversation_list_serializer import ConversationListSerializer 
+from apps.utils.custom_rate_limit import custom_ratelimit
+
 
 @swagger_auto_schema(
     method="GET",
@@ -22,6 +24,7 @@ from apps.chat.api.serializers.conversation_list_serializer import ConversationL
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='5/5min', method="GET", block=True)
 def my_conversations(request):
     """
     GET /api/chat/conversations/
