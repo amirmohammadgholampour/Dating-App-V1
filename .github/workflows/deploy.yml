@@ -1,0 +1,110 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_root_pass
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root -ptest_root_pass"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libmysqlclient-dev gcc
+    
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Wait for MySQL
+      run: |
+        for i in {1..30}; do
+          if mysqladmin ping -h 127.0.0.1 -u root -ptest_root_pass --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Waiting for MySQL... attempt $i"
+          sleep 2
+        done
+    
+    - name: Create Test Database
+      run: |
+        mysql -h 127.0.0.1 -u root -ptest_root_pass -e "CREATE DATABASE IF NOT EXISTS test_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    
+    - name: Run Migrations
+      env:
+        SECRET_KEY: "django-insecure-test-key-only-for-ci-cd"
+        DEBUG: "True"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
+        DB_ENGINE: "django.db.backends.mysql"
+        DB_NAME: "test_db"
+        DB_USER: "root"
+        DB_PASSWORD: "test_root_pass"
+        DB_HOST: "127.0.0.1"
+        DB_PORT: "3306"
+      run: |
+        python manage.py migrate
+    
+    - name: Run Tests
+      env:
+        SECRET_KEY: "django-insecure-test-key-only-for-ci-cd"
+        DEBUG: "True"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
+        DB_ENGINE: "django.db.backends.mysql"
+        DB_NAME: "test_db"
+        DB_USER: "root"
+        DB_PASSWORD: "test_root_pass"
+        DB_HOST: "127.0.0.1"
+        DB_PORT: "3306"
+      run: |
+        python manage.py test --verbosity=2
+
+  deploy:
+    name: Deploy to Production Server
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/${{ secrets.SERVER_USER }}/dating-app
+          git pull origin main
+          source venv/bin/activate
+          pip install -r requirements.txt
+          python manage.py migrate
+          python manage.py collectstatic --noinput
+          sudo systemctl restart gunicorn
