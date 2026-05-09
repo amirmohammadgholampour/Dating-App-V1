@@ -8,6 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.matching.models import Swipe, ChatRequest 
 from apps.matching.api.serializers.create_swipe_serializer import CreateSwipeSerializer
+from apps.utils.custom_rate_limit import custom_ratelimit 
 
 
 @swagger_auto_schema(
@@ -48,6 +49,7 @@ from apps.matching.api.serializers.create_swipe_serializer import CreateSwipeSer
 )
 @api_view(["POST"]) 
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='30/min', method="POST", block=True)
 def create_swipe(request): 
     """
     POST /api/swipe/
