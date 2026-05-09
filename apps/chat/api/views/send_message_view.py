@@ -9,6 +9,7 @@ from drf_yasg import openapi
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.send_message_serializer import SendMessageSerializer
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @swagger_auto_schema(
@@ -52,6 +53,7 @@ from apps.chat.api.serializers.send_message_serializer import SendMessageSeriali
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='15/min', method="POST", block=True)
 def send_message(request, conversation_id):
     """
     POST /api/chat/conversations/{id}/send/
