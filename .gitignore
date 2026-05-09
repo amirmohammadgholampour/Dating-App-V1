@@ -1,0 +1,18 @@
+venv
+run-dev.sh
+.vscode
+
+# Python 
+*__pycache__
+*__init__.py
+
+# Utils
+profile_pictures
+json-list-iran-cities
+
+# Secret 
+.env.local
+.env
+!.env.example
+..gitignore.swp
+config/settings/local.py
