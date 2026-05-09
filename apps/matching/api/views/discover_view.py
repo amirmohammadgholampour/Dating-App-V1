@@ -19,10 +19,12 @@ from apps.users.models import User, Interest
 from apps.matching.models import Swipe, ChatRequest 
 from apps.safety.models import Block 
 from apps.chat.models import Conversation
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='10/min', method="GET", block=True)
 def discover_view(request): 
     user = request.user 
 
