@@ -1,0 +1,75 @@
+# apps/chat/views/message.py
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+from apps.chat.models import Conversation, Message
+from apps.chat.api.serializers.message_serializer import MessageSerializer
+
+
+class MessagePagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+@swagger_auto_schema(
+    method="get",
+    manual_parameters=[
+        openapi.Parameter(
+            'page',
+            openapi.IN_QUERY,
+            description="Page number",
+            type=openapi.TYPE_INTEGER,
+            required=False
+        ),
+        openapi.Parameter(
+            'page_size',
+            openapi.IN_QUERY,
+            description="Number of messages per page",
+            type=openapi.TYPE_INTEGER,
+            required=False
+        ),
+    ],
+    responses={
+        200: MessageSerializer(many=True),
+        403: openapi.Response(description="Not a member of this conversation"),
+        404: openapi.Response(description="Conversation not found"),
+    },
+    operation_description="Get messages for a conversation (paginated).",
+    operation_summary="Get Messages",
+    tags=['Chat']
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_messages(request, conversation_id):
+    """
+    GET /api/chat/conversations/{id}/messages/
+    Returns paginated messages for a specific conversation.
+    """
+    conversation = get_object_or_404(
+        Conversation,
+        id=conversation_id
+    )
+
+    if request.user not in [conversation.user1, conversation.user2]:
+        return Response(
+            {"message": "You are not a member of this conversation."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    messages = Message.objects.filter(
+        conversation=conversation
+    ).select_related('sender').order_by('-sent_at')
+
+    paginator = MessagePagination()
+    page = paginator.paginate_queryset(messages, request)
+
+    serializer = MessageSerializer(page, many=True)
+
+    return paginator.get_paginated_response(serializer.data)
