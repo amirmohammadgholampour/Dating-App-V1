@@ -8,6 +8,7 @@ from drf_yasg import openapi
 
 from apps.matching.models import ChatRequest 
 from apps.matching.api.serializers.chat_request_serializer import ReceivedRequestSerializer 
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @swagger_auto_schema(
@@ -22,6 +23,7 @@ from apps.matching.api.serializers.chat_request_serializer import ReceivedReques
 )
 @api_view(["GET"]) 
 @permission_classes([IsAuthenticated]) 
+@custom_ratelimit(key="user", rate='8/min', method="GET", block=True)
 def recieved_requests(request): 
     """
     GET /api/chat-requests/received/
