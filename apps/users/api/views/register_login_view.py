@@ -1,7 +1,8 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response 
 from rest_framework import status 
 from rest_framework_simplejwt.tokens import RefreshToken  
+from rest_framework.throttling import UserRateThrottle 
 from django.contrib.auth import authenticate 
 
 from drf_yasg import openapi 
@@ -11,6 +12,10 @@ from apps.users.models import User
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 from apps.users.api.serializers.users_serializer import UserSerializer
 from apps.users.api.permissions.not_auth import NotAuthenticated
+
+class LoginRegisterThrottle(UserRateThrottle): 
+    # rate = '3/5min'
+    scope = 'login_register'
 
 @swagger_auto_schema(
     method="POST",
@@ -86,6 +91,7 @@ from apps.users.api.permissions.not_auth import NotAuthenticated
 )
 @api_view(["POST"])
 @permission_classes([NotAuthenticated])
+@throttle_classes([LoginRegisterThrottle])
 def login_or_register(request):
     """
     Single endpoint for both login and registration.
