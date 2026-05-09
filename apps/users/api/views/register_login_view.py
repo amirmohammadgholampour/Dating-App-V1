@@ -16,7 +16,7 @@ from apps.users.models import User
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 from apps.users.api.serializers.users_serializer import UserSerializer
 from apps.users.api.permissions.not_auth import NotAuthenticated
-from apps.users.api.permissions.rate_limit_auth import custom_ratelimit
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @swagger_auto_schema(
