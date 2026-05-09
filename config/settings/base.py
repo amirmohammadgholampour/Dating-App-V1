@@ -1,11 +1,18 @@
 from pathlib import Path
 from datetime import timedelta
 import environ
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env.local')
+
+ENVIRONMENT = os.environ.get('DJANGO_ENV', 'local')
+
+if ENVIRONMENT == 'production':
+    environ.Env.read_env(BASE_DIR / '.env')
+else:
+    environ.Env.read_env(BASE_DIR / '.env.local')
 
 SECRET_KEY = env('SECRET_KEY')
 
