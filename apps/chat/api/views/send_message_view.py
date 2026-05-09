@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from apps.chat.models import Conversation, Message
-from apps.chat.api.serializers.message_serializer import SendMessageSerializer
+from apps.chat.api.serializers.send_message_serializer import SendMessageSerializer
 
 
 @swagger_auto_schema(
