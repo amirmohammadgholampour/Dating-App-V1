@@ -8,6 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 from apps.users.api.serializers.users_serializer import UserSerializer
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @swagger_auto_schema(
@@ -50,6 +51,8 @@ from apps.users.api.serializers.users_serializer import UserSerializer
 )
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='5/min', method="PUT", block=True)
+@custom_ratelimit(key="user", rate='5/min', method="PATCH", block=True)
 def update_profile(request):
     partial = request.method == "PATCH"
     
