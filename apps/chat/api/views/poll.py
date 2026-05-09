@@ -12,6 +12,7 @@ from drf_yasg import openapi
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.message_serializer import MessageSerializer
+from apps.utils.custom_rate_limit import custom_ratelimit
 
 
 @swagger_auto_schema(
@@ -47,6 +48,7 @@ from apps.chat.api.serializers.message_serializer import MessageSerializer
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@custom_ratelimit(key="user", rate='20/min', method="GET", block=True)
 def poll_messages(request, conversation_id):
     """
     GET /api/chat/conversations/{id}/poll/?after=2026-05-09T10:00:00
