@@ -1,5 +1,19 @@
 from rest_framework import serializers
 from apps.users.models import User, Interest
+from apps.users.api.serializers.user_read_serializer import UserReadSerializer
+
+
+class LoginRegisterRequestSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(help_text="11-digit phone number starting with 09")
+    password = serializers.CharField(help_text="Password (min 8 chars, letters + numbers)")
+
+class LoginRegisterResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+    is_new_user = serializers.BooleanField()
+    user = UserReadSerializer()
+
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(

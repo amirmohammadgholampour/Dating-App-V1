@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate
 from django_ratelimit.decorators import ratelimit 
 from django_ratelimit.exceptions import Ratelimited
 
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+
 from functools import wraps 
 
 from drf_yasg import openapi 
@@ -14,81 +16,25 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.users.models import User 
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
-from apps.users.api.serializers.users_serializer import UserSerializer
+from apps.users.api.serializers.users_serializer import UserSerializer, LoginRegisterRequestSerializer, LoginRegisterResponseSerializer
 from apps.users.api.permissions.not_auth import NotAuthenticated
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
-@swagger_auto_schema(
-    method="POST",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['phone_number', 'password'],
-        properties={
-            'phone_number': openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="11-digit phone number starting with 09"
-            ),
-            'password': openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="Password (min 8 chars, letters + numbers)"
-            ),
-        }
-    ),
-    responses={
-        200: openapi.Response(
-            description="Login successful (existing user)",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'access': openapi.Schema(type=openapi.TYPE_STRING),
-                    'refresh': openapi.Schema(type=openapi.TYPE_STRING),
-                    'is_new_user': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    'user': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                            'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
-                            'first_name': openapi.Schema(type=openapi.TYPE_STRING),
-                            'last_name': openapi.Schema(type=openapi.TYPE_STRING),
-                            'age': openapi.Schema(type=openapi.TYPE_INTEGER),
-                            'gender': openapi.Schema(type=openapi.TYPE_STRING),
-                            'city': openapi.Schema(type=openapi.TYPE_STRING),
-                            'bio': openapi.Schema(type=openapi.TYPE_STRING),
-                        }
-                    ),
-                }
-            )
-        ),
-        201: openapi.Response(
-            description="Registration successful (new user)",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'access': openapi.Schema(type=openapi.TYPE_STRING),
-                    'refresh': openapi.Schema(type=openapi.TYPE_STRING),
-                    'is_new_user': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    'user': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                            'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
-                        }
-                    ),
-                }
-            )
-        ),
-        400: openapi.Response(description="Invalid data"),
-    },
-    operation_description=(
+@extend_schema(
+    summary="Login or Register",
+    description=(
         "Login or Register with phone number and password.\n\n"
-        "- If user exists and password is correct → returns tokens (200)\n"
+        "- If user exists and password is correct → returns login success (200)\n"
         "- If user does not exist → creates account and returns tokens (201)\n"
         "- If user exists but wrong password → returns error (400)"
     ),
-    operation_summary="Login or Register",
+    request=LoginRegisterRequestSerializer,
+    responses={
+        200: OpenApiResponse(response=LoginRegisterResponseSerializer, description="Login successful (existing user)"),
+        201: OpenApiResponse(response=LoginRegisterResponseSerializer, description="Registration successful (new user)"),
+        400: OpenApiResponse(description="Invalid data"),
+    },
     tags=['Users']
 )
 @api_view(["POST"])

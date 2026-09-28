@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt', 
     'rest_framework_simplejwt.token_blacklist', 
     'drf_yasg', 
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'corsheaders',
 
     'apps.users', 
@@ -93,6 +95,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ), 
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # ===== SimpleJWT config =====
@@ -120,6 +123,17 @@ SIMPLE_JWT = {
     'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
     'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
 }
+
+# ======= Django Rest Framework Spectacular config ======
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Dating App',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+}
+
 
 # ====== Internationalization ======
 LANGUAGE_CODE = 'en-us'
