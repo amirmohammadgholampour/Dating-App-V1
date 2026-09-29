@@ -3,18 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated
 
-from drf_yasg import openapi 
-from drf_yasg.utils import swagger_auto_schema 
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 
-@swagger_auto_schema(
-    method="delete",
+@extend_schema(
+    summary="Delete Account",
+    description="Delete current user account (soft delete - sets is_active=False).",
     responses={
-        204: openapi.Response(description="Account deleted successfully"),
-        401: openapi.Response(description="Authentication required"),
+        204: OpenApiResponse(description="Account deleted successfully"),
+        401: OpenApiResponse(description="Authentication required")
     },
-    operation_description="Delete current user account (soft delete - sets is_active=False).",
-    operation_summary="Delete Account",
     tags=['Users']
 )
 @api_view(["DELETE"])

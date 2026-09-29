@@ -3,17 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated
 
-from drf_yasg.utils import swagger_auto_schema 
+from drf_spectacular.utils import extend_schema
 
 from apps.users.models import User 
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 
 
-@swagger_auto_schema(
-    method="GET", 
-    responses={200: UserReadSerializer}, 
-    operation_description="Get the logged-in user profile", 
-    operation_summary="My Profile", 
+@extend_schema(
+    summary="My Profile",
+    description="Get the logged-in user profile",
+    responses={200: UserReadSerializer},
     tags=["Users"]
 )
 @api_view(["GET"]) 

@@ -3,50 +3,34 @@ from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated
 
-from drf_yasg import openapi 
-from drf_yasg.utils import swagger_auto_schema 
-
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 from apps.users.api.serializers.users_serializer import UserSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit
 
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-@swagger_auto_schema(
-    method="put",
-    request_body=UserSerializer,
+
+@extend_schema(
+    summary="Update profile (PUT)",
+    description="Full profile update. All fields must be provided.",
+    request=UserSerializer,
     responses={
-        200: openapi.Response(
-            description="Profile updated successfully.",
-            schema=UserReadSerializer()
-        ),
-        400: openapi.Response(
-            description="Invalid data.",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'errors': openapi.Schema(type=openapi.TYPE_OBJECT)
-                }
-            )
-        ),
-        401: openapi.Response(description="Authentication required"),
+        200: UserReadSerializer, 
+        400: OpenApiResponse(description="Invalid data"),
+        401: OpenApiResponse(description="Authentication required")
     },
-    operation_description="Full profile update. All fields must be provided.",
-    operation_summary="Update profile (PUT)",
     tags=['Users']
 )
-@swagger_auto_schema(
-    method="patch",
-    request_body=UserSerializer,
+
+@extend_schema(
+    summary="Update profile (PATCH)",
+    description="Partial profile update. Only send fields to change.",
+    request=UserSerializer,
     responses={
-        200: openapi.Response(
-            description="Profile partially updated.",
-            schema=UserReadSerializer()
-        ),
-        400: openapi.Response(description="Invalid data."),
-        401: openapi.Response(description="Authentication required"),
+        200: UserReadSerializer,
+        400: OpenApiResponse(description="Invalid data."),
+        401: OpenApiResponse(description="Authentication required"),
     },
-    operation_description="Partial profile update. Only send fields to change.",
-    operation_summary="Update profile (PATCH)",
     tags=['Users']
 )
 @api_view(["PUT", "PATCH"])
