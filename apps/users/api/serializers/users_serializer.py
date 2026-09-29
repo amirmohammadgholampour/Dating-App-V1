@@ -14,6 +14,13 @@ class LoginRegisterResponseSerializer(serializers.Serializer):
     is_new_user = serializers.BooleanField()
     user = UserReadSerializer()
 
+class LogoutRequestSerializer(serializers.Serializer):
+    refresh = serializers.CharField(help_text="Refresh token to blacklist")
+
+class LogoutResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
