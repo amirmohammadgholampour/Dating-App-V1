@@ -4,15 +4,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken  
 from django.contrib.auth import authenticate 
 
-from django_ratelimit.decorators import ratelimit 
-from django_ratelimit.exceptions import Ratelimited
-
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-
-from functools import wraps 
-
-from drf_yasg import openapi 
-from drf_yasg.utils import swagger_auto_schema 
 
 from apps.users.models import User 
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
