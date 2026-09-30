@@ -7,43 +7,33 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone 
 
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer, OpenApiParameter
+from rest_framework import serializers
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.message_serializer import MessageSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
-@swagger_auto_schema(
-    method="get",
-    manual_parameters=[
-        openapi.Parameter(
-            'after',
-            openapi.IN_QUERY,
-            description="ISO datetime string (e.g., 2026-05-09T10:00:00). Only messages after this time.",
-            type=openapi.TYPE_STRING,
-            required=True
-        ),
+@extend_schema(
+    summary="Poll Messages",
+    description="Poll for new messages after a timestamp.",
+    parameters=[
+        OpenApiParameter('after', type=str, description="ISO datetime string (e.g., 2026-05-09T10:00:00).", required=True),
     ],
     responses={
-        200: openapi.Response(
-            description="New messages returned",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'messages': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_OBJECT)),
-                    'has_new': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    'server_time': openapi.Schema(type=openapi.TYPE_STRING),
-                }
-            )
+        200: inline_serializer(
+            name="PollingResponse",
+            fields={
+                "messages": serializers.ListField(child=serializers.DictField()),
+                "has_new": serializers.BooleanField(),
+                "server_time": serializers.CharField(),
+            }
         ),
-        400: openapi.Response(description="Missing or invalid 'after' parameter"),
-        403: openapi.Response(description="Not a member"),
-        404: openapi.Response(description="Conversation not found"),
+        400: OpenApiResponse(description="Missing or invalid 'after' parameter"),
+        403: OpenApiResponse(description="Not a member"),
+        404: OpenApiResponse(description="Conversation not found"),
     },
-    operation_description="Poll for new messages after a timestamp.",
-    operation_summary="Poll Messages",
     tags=['Chat']
 )
 @api_view(["GET"])

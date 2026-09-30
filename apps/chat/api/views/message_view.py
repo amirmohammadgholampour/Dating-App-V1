@@ -5,8 +5,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.message_serializer import MessageSerializer
@@ -18,31 +18,18 @@ class MessagePagination(PageNumberPagination):
     max_page_size = 100
 
 
-@swagger_auto_schema(
-    method="get",
-    manual_parameters=[
-        openapi.Parameter(
-            'page',
-            openapi.IN_QUERY,
-            description="Page number",
-            type=openapi.TYPE_INTEGER,
-            required=False
-        ),
-        openapi.Parameter(
-            'page_size',
-            openapi.IN_QUERY,
-            description="Number of messages per page",
-            type=openapi.TYPE_INTEGER,
-            required=False
-        ),
+@extend_schema(
+    summary="Get Messages",
+    description="Get messages for a conversation (paginated).",
+    parameters=[
+        OpenApiParameter('page', type=int, description="Page number"),
+        OpenApiParameter('page_size', type=int, description="Number of messages per page"),
     ],
     responses={
         200: MessageSerializer(many=True),
-        403: openapi.Response(description="Not a member of this conversation"),
-        404: openapi.Response(description="Conversation not found"),
+        403: OpenApiResponse(description="Not a member of this conversation"),
+        404: OpenApiResponse(description="Conversation not found"),
     },
-    operation_description="Get messages for a conversation (paginated).",
-    operation_summary="Get Messages",
     tags=['Chat']
 )
 @api_view(["GET"])

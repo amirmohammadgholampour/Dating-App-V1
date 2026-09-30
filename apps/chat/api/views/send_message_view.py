@@ -4,51 +4,42 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
+from rest_framework import serializers
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.send_message_serializer import SendMessageSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
-@swagger_auto_schema(
-    method="POST",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['content'],
-        properties={
-            'content': openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="Message text"
-            ),
-        }
+@extend_schema(
+    summary="Send Message",
+    description="Send a text message in a conversation.",
+    request=inline_serializer(
+        name="SendMessageRequest",
+        fields={"content": serializers.CharField(help_text="Message text")}
     ),
     responses={
-        201: openapi.Response(
-            description="Message sent successfully",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'data': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                            'content': openapi.Schema(type=openapi.TYPE_STRING),
-                            'sender_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                            'sent_at': openapi.Schema(type=openapi.TYPE_STRING),
-                        }
-                    ),
-                }
-            )
+        201: inline_serializer(
+            name="SendMessageResponse",
+            fields={
+                "message": serializers.CharField(),
+                "data": inline_serializer(
+                    name="MessageData",
+                    fields={
+                        "id": serializers.IntegerField(),
+                        "content": serializers.CharField(),
+                        "sender_id": serializers.IntegerField(),
+                        "sent_at": serializers.CharField(),
+                    }
+                )
+            }
         ),
-        400: openapi.Response(description="Validation error"),
-        403: openapi.Response(description="Not a member of this conversation"),
-        404: openapi.Response(description="Conversation not found"),
+        400: OpenApiResponse(description="Validation error"),
+        403: OpenApiResponse(description="Not a member of this conversation"),
+        404: OpenApiResponse(description="Conversation not found"),
     },
-    operation_description="Send a text message in a conversation.",
-    operation_summary="Send Message",
     tags=['Chat']
 )
 @api_view(["POST"])

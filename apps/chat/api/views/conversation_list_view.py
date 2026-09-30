@@ -4,22 +4,20 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated 
 from django.db.models import Q 
 
-from drf_yasg import openapi 
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from apps.chat.models import Conversation 
 from apps.chat.api.serializers.conversation_list_serializer import ConversationListSerializer 
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
-@swagger_auto_schema(
-    method="GET",
+@extend_schema(
+    summary="My Conversations",
+    description="Get list of all conversations for the current user.",
     responses={
         200: ConversationListSerializer(many=True),
-        401: openapi.Response(description="Authentication required"),
+        401: OpenApiResponse(description="Authentication required"),
     },
-    operation_description="Get list of all conversations for the current user.",
-    operation_summary="My Conversations",
     tags=['Chat']
 )
 @api_view(["GET"])
@@ -45,6 +43,6 @@ def my_conversations(request):
             "message": "Conversations returned successfully.",
             "data": serializer.data,
             "count": conversations.count()
-        },
+        },  
         status=status.HTTP_200_OK
     )
