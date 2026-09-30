@@ -2,23 +2,23 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response 
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated 
+from rest_framework import serializers
 
-from drf_yasg.utils import swagger_auto_schema 
-from drf_yasg import openapi 
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
+
 
 from apps.matching.models import ChatRequest 
 from apps.matching.api.serializers.chat_request_serializer import ReceivedRequestSerializer 
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
-@swagger_auto_schema(
-    method="GET",
+@extend_schema(
+    summary="Received Chat Requests",
+    description="Get list of pending chat requests received by the current user.",
     responses={
         200: ReceivedRequestSerializer(many=True),
-        401: openapi.Response(description="Authentication required"),
+        401: OpenApiResponse(description="Authentication required"),
     },
-    operation_description="Get list of pending chat requests received by the current user.",
-    operation_summary="Received Chat Requests",
     tags=['Matching']
 )
 @api_view(["GET"]) 
@@ -43,25 +43,21 @@ def recieved_requests(request):
     }, status=status.HTTP_200_OK) 
 
 
-@swagger_auto_schema(
-    method="POST",
+@extend_schema(
+    summary="Accept Chat Request",
+    description="Accept a pending chat request and create a conversation.",
     responses={
-        200: openapi.Response(
-            description="Request accepted, conversation created",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'conversation_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                }
-            )
+        200: inline_serializer(
+            name="AcceptChatResponse",
+            fields={
+                "message": serializers.CharField(),
+                "conversation_id": serializers.IntegerField(),
+            }
         ),
-        400: openapi.Response(description="Request not found or already processed"),
-        401: openapi.Response(description="Authentication required"),
-        403: openapi.Response(description="Not your request to accept"),
+        400: OpenApiResponse(description="Request not found or already processed"),
+        401: OpenApiResponse(description="Authentication required"),
+        403: OpenApiResponse(description="Not your request to accept"),
     },
-    operation_description="Accept a pending chat request and create a conversation.",
-    operation_summary="Accept Chat Request",
     tags=['Matching']
 )
 @api_view(["POST"]) 
@@ -91,24 +87,18 @@ def accept_request(request, pk):
     }, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(
-    method="POST",
+@extend_schema(
+    summary="Reject Chat Request",
+    description="Reject a pending chat request.",
     responses={
-        200: openapi.Response(
-            description="Request rejected",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                }
-            )
+        200: inline_serializer(
+            name="RejectChatResponse",
+            fields={"message": serializers.CharField()}
         ),
-        400: openapi.Response(description="Request not found or already processed"),
-        401: openapi.Response(description="Authentication required"),
-        403: openapi.Response(description="Not your request to reject"),
+        400: OpenApiResponse(description="Request not found or already processed"),
+        401: OpenApiResponse(description="Authentication required"),
+        403: OpenApiResponse(description="Not your request to reject"),
     },
-    operation_description="Reject a pending chat request.",
-    operation_summary="Reject Chat Request",
     tags=['Matching']
 )
 @api_view(["POST"]) 

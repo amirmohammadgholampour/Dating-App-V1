@@ -2,49 +2,33 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response 
 from rest_framework import status 
+from rest_framework import serializers
 
-from drf_yasg import openapi 
-from drf_yasg.utils import swagger_auto_schema 
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 
 from apps.matching.models import Swipe, ChatRequest 
 from apps.matching.api.serializers.create_swipe_serializer import CreateSwipeSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit 
+from apps.matching.api.serializers.create_swipe_serializer import SwipeRequestSerializer
 
 
-@swagger_auto_schema(
-    method="POST",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['swipee', 'action'],
-        properties={
-            'swipee': openapi.Schema(
-                type=openapi.TYPE_INTEGER,
-                description="ID of the user being swiped on"
-            ),
-            'action': openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="'request' or 'reject'"
-            ),
-        }
-    ),
+@extend_schema(
+    summary="Create Swipe",
+    description="Swipe on a user profile (request chat or reject).",
+    request=SwipeRequestSerializer,
     responses={
-        201: openapi.Response(
-            description="Swipe recorded successfully",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'swipe_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                    'action': openapi.Schema(type=openapi.TYPE_STRING),
-                    'chat_request_sent': openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                }
-            )
+        201: inline_serializer(
+            name="SwipeResponse",
+            fields={
+                "message": serializers.CharField(),
+                "swipe_id": serializers.IntegerField(),
+                "action": serializers.CharField(),
+                "chat_request_sent": serializers.BooleanField(),
+            }
         ),
-        400: openapi.Response(description="Validation error"),
-        401: openapi.Response(description="Authentication required"),
+        400: OpenApiResponse(description="Validation error"),
+        401: OpenApiResponse(description="Authentication required"),
     },
-    operation_description="Swipe on a user profile (request chat or reject).",
-    operation_summary="Create Swipe",
     tags=['Matching']
 )
 @api_view(["POST"]) 

@@ -2,6 +2,9 @@
 from rest_framework import serializers
 from apps.matching.models import Swipe
 
+class SwipeRequestSerializer(serializers.Serializer):
+    swipee = serializers.IntegerField(help_text="ID of the user being swiped on")
+    action = serializers.CharField(help_text="'request' or 'reject'")
 
 class CreateSwipeSerializer(serializers.ModelSerializer):
     class Meta:
