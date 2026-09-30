@@ -10,6 +10,7 @@ class ProfileCardSerializer(serializers.ModelSerializer):
     interests = serializers.SerializerMethodField()
     province_name = serializers.CharField(source='province.name', read_only=True)
     city_name = serializers.CharField(source='city.name', read_only=True)
+    is_online = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -24,6 +25,7 @@ class ProfileCardSerializer(serializers.ModelSerializer):
             'bio',
             'profile_picture',
             'interests',
+            'is_online',
         ]
 
     def get_interests(self, obj):

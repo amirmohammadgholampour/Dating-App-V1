@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from ..models import User
-from apps.users.db.user_model import UserInterest
+from apps.users.db.user_model import PhoneOTP, UserInterest
 
 
 class UserInterestInline(admin.TabularInline):
@@ -15,12 +15,14 @@ class UserInterestInline(admin.TabularInline):
 class UserAdmin(BaseUserAdmin):
     list_display = [
         'phone_number',
+        'email',
         'first_name',
         'last_name',
         'age',
         'city',
         'province',
         'gender',
+        'is_online',
         'is_active',
         'is_staff',
     ]
@@ -38,6 +40,7 @@ class UserAdmin(BaseUserAdmin):
 
     search_fields = [
         'phone_number',
+        'email',
         'first_name',
         'last_name',
         'city__name',
@@ -48,16 +51,18 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('phone_number', 'password')
+            'fields': ('phone_number', 'email', 'password')
         }),
         ('Personal Information', {
             'fields': (
                 'first_name',
                 'last_name',
+                'date_of_birth',
                 'age',
                 'gender',
                 'bio',
                 'profile_picture',
+                'last_seen_at',
             )
         }),
         ('Location', {
@@ -78,15 +83,17 @@ class UserAdmin(BaseUserAdmin):
     )
 
     inlines = [UserInterestInline]
+    readonly_fields = ['age', 'last_seen_at', 'last_login', 'date_joined']
 
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
             'fields': (
                 'phone_number',
+                'email',
                 'password1',
                 'password2',
-                'age',
+                'date_of_birth',
                 'gender',
                 'province',
                 'city',
@@ -95,3 +102,15 @@ class UserAdmin(BaseUserAdmin):
             ),
         }),
     )
+
+    @admin.display(boolean=True, description='Online')
+    def is_online(self, obj):
+        return obj.is_online
+
+
+@admin.register(PhoneOTP)
+class PhoneOTPAdmin(admin.ModelAdmin):
+    list_display = ['phone_number', 'purpose', 'created_at', 'expires_at', 'attempts', 'is_consumed']
+    list_filter = ['purpose', 'is_consumed', 'created_at']
+    search_fields = ['phone_number']
+    readonly_fields = ['phone_number', 'purpose', 'code_digest', 'created_at', 'expires_at', 'attempts', 'is_consumed']

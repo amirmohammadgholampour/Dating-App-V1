@@ -18,10 +18,8 @@ from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 @api_view(["GET"]) 
 @permission_classes([IsAuthenticated])
 def user_profile(request): 
-    req_user = request.user
-    user = User.objects.get(id=req_user.id) 
-    serializer = UserReadSerializer(user) 
+    serializer = UserReadSerializer(request.user)
     return Response({
         "message": "User Profile", 
         "data": serializer.data
-    }, status=status.HTTP_200_OK) 
+    }, status=status.HTTP_200_OK)

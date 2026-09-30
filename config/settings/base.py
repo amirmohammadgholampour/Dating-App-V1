@@ -69,6 +69,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 AUTH_USER_MODEL = 'users.User'
+AUTHENTICATION_BACKENDS = [
+    'apps.users.db.user_model.UserEmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+SMS_PROVIDER_URL = env('SMS_PROVIDER_URL', default='')
+SMS_PROVIDER_TOKEN = env('SMS_PROVIDER_TOKEN', default='')
 
 # ====== Database ======
 DATABASES = {

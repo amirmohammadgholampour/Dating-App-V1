@@ -12,7 +12,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 @extend_schema(
     summary="Update profile (PUT)",
-    description="Full profile update. All fields must be provided.",
+    description="Update profile fields. Age is calculated from date_of_birth and cannot be set directly.",
     request=UserSerializer,
     responses={
         200: UserReadSerializer, 
