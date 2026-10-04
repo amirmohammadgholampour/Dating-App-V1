@@ -22,8 +22,10 @@ def custom_ratelimit(key='user', rate='3/5m', method='POST', block=True):
             except Ratelimited:
                 return Response(
                     {
-                        "message": "Your request limit is over the allowed.",
-                        "detail": "Too many requests. Please try again in 5 minutes."
+                        "error": {
+                            "code": "rate_limit_exceeded",
+                            "message": "Too many requests. Wait before trying again."
+                        }
                     },
                     status=status.HTTP_429_TOO_MANY_REQUESTS
                 )

@@ -15,6 +15,7 @@ class UserInterestInline(admin.TabularInline):
 class UserAdmin(BaseUserAdmin):
     list_display = [
         'phone_number',
+        'phone_verified',
         'email',
         'first_name',
         'last_name',
@@ -51,7 +52,7 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('phone_number', 'email', 'password')
+            'fields': ('phone_number', 'phone_verified', 'email', 'password')
         }),
         ('Personal Information', {
             'fields': (
@@ -90,6 +91,7 @@ class UserAdmin(BaseUserAdmin):
             'classes': ('wide',),
             'fields': (
                 'phone_number',
+                'phone_verified',
                 'email',
                 'password1',
                 'password2',

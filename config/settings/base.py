@@ -11,6 +11,7 @@ SECRET_KEY = env('SECRET_KEY')
 
 DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=not DEBUG)
 
 # ====== Application definition ======
 INSTALLED_APPS = [
@@ -110,6 +111,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'CHECK_USER_IS_ACTIVE': True,
+    'CHECK_REVOKE_TOKEN': True,
     'UPDATE_LAST_LOGIN': True,
 
     'AUTH_HEADER_TYPES': ('JWT',),
@@ -125,7 +128,7 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
 
     'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
-    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
+    'TOKEN_REFRESH_SERIALIZER': 'apps.users.api.serializers.token_serializer.UserTokenRefreshSerializer',
     'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
     'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
 }

@@ -6,7 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone 
 from django.utils.translation import gettext_lazy as _ 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from datetime import date
 from apps.users.db.interest_model import Interest
 
@@ -83,6 +83,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("First name"))
     last_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("Last name"))
     email = models.EmailField(unique=True, null=True, blank=True, verbose_name=_("Email address"))
+    phone_verified = models.BooleanField(default=False, verbose_name=_("Phone verified"))
     date_of_birth = models.DateField(null=True, blank=True, verbose_name=_("Date of birth"))
 
     profile_picture = models.ImageField(
@@ -202,8 +203,10 @@ class UserEmailBackend:
         except User.DoesNotExist:
             # Run a dummy hash to reduce account enumeration timing differences.
             User().set_password(password)
-            return None
-        return user if user.check_password(password) and self.user_can_authenticate(user) else None
+            raise PermissionDenied("Invalid email or password.")
+        if not user.check_password(password) or not self.user_can_authenticate(user):
+            raise PermissionDenied("Invalid email or password.")
+        return user
 
     @staticmethod
     def user_can_authenticate(user):

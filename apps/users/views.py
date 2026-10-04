@@ -3,3 +3,5 @@ from apps.users.api.views.auth_views import email_login, email_register
 from apps.users.api.views.update_profile_view import update_profile
 from apps.users.api.views.delete_account_view import delete_account
 from apps.users.api.views.logout_view import logout
+from apps.users.api.views.logout_view import logout_all
+from apps.users.api.views.change_password_view import change_password

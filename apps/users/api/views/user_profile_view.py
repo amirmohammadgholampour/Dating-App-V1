@@ -5,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from drf_spectacular.utils import extend_schema
 
-from apps.users.models import User 
 from apps.users.api.serializers.user_read_serializer import UserReadSerializer
 
 
