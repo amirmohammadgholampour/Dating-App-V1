@@ -13,8 +13,10 @@ from django.db.models import (
     Q
 )
 from django.core.paginator import Paginator
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers
 
-from apps.matching.api.serializers.discover_serializer import ProfileCardSerializer 
+from apps.matching.api.serializers.discover_serializer import DiscoverQuerySerializer, ProfileCardSerializer
 from apps.users.models import User, Interest
 from apps.matching.models import Swipe, ChatRequest 
 from apps.safety.models import Block 
@@ -22,11 +24,57 @@ from apps.chat.models import Conversation
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
+@extend_schema(
+    summary="Discover profiles",
+    description=(
+        "Return eligible profiles for the authenticated user. Results can be filtered by gender, "
+        "age range, province, city, or a location name matching either a city or province. "
+        "When both city_id and province_id are supplied, the city must belong to that province."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="gender",
+            type=str,
+            enum=[value for value, _label in User.Gender.choices],
+            location=OpenApiParameter.QUERY,
+            description="Filter by profile gender.",
+        ),
+        OpenApiParameter(name="min_age", type=int, location=OpenApiParameter.QUERY, description="Minimum age, inclusive."),
+        OpenApiParameter(name="max_age", type=int, location=OpenApiParameter.QUERY, description="Maximum age, inclusive."),
+        OpenApiParameter(name="province_id", type=int, location=OpenApiParameter.QUERY, description="Filter by province ID."),
+        OpenApiParameter(name="city_id", type=int, location=OpenApiParameter.QUERY, description="Filter by city ID."),
+        OpenApiParameter(name="location", type=str, location=OpenApiParameter.QUERY, description="Case-insensitive match against city or province name."),
+        OpenApiParameter(name="page", type=int, location=OpenApiParameter.QUERY, description="Page number (20 profiles per page).", default=1),
+    ],
+    responses={
+        200: inline_serializer(
+            name="DiscoverProfilesResponse",
+            fields={
+                "message": serializers.CharField(),
+                "data": ProfileCardSerializer(many=True),
+                "page": serializers.IntegerField(),
+                "total_pages": serializers.IntegerField(),
+                "total_profiles": serializers.IntegerField(),
+            },
+        ),
+        400: OpenApiResponse(description="Invalid filter values."),
+        401: OpenApiResponse(description="Authentication required."),
+        429: OpenApiResponse(description="Too many Discover requests."),
+    },
+    tags=["Matching"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @custom_ratelimit(key="user", rate='10/min', method="GET", block=True)
 def discover_view(request): 
     user = request.user 
+    query_serializer = DiscoverQuerySerializer(data=request.query_params)
+    if not query_serializer.is_valid():
+        return Response(
+            {"errors": query_serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    filters = query_serializer.validated_data
 
     # ============================================================
     # STEP 1: Base Queryset
@@ -65,6 +113,23 @@ def discover_view(request):
     ).exclude(
         id__in=exclude_ids
     )
+
+    if "gender" in filters:
+        profiles = profiles.filter(gender=filters["gender"])
+    if "min_age" in filters:
+        profiles = profiles.filter(age__gte=filters["min_age"])
+    if "max_age" in filters:
+        profiles = profiles.filter(age__lte=filters["max_age"])
+    if "province_id" in filters:
+        profiles = profiles.filter(province=filters["province_id"])
+    if "city_id" in filters:
+        profiles = profiles.filter(city=filters["city_id"])
+    if "location" in filters:
+        location = filters["location"]
+        profiles = profiles.filter(
+            Q(city__name__icontains=location) |
+            Q(province__name__icontains=location)
+        )
 
     # ============================================================
     # STEP 2: Prioritize Pending Requests
@@ -165,7 +230,7 @@ def discover_view(request):
     # ============================================================
     # STEP 6: Pagination
     # ============================================================
-    page = request.query_params.get('page', 1)
+    page = filters["page"]
     page_size = 20
     paginator = Paginator(filtered_profiles, page_size)
     page_obj = paginator.get_page(page)
