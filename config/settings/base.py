@@ -35,7 +35,8 @@ INSTALLED_APPS = [
     'apps.users', 
     'apps.matching', 
     'apps.chat', 
-    'apps.safety'
+    'apps.safety',
+    'apps.notification'
 ]
 
 MIDDLEWARE = [

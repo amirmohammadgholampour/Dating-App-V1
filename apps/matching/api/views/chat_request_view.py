@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated 
 from rest_framework import serializers
+from django.db import transaction
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 
 
 from apps.matching.models import ChatRequest 
 from apps.matching.api.serializers.chat_request_serializer import ReceivedRequestSerializer 
+from apps.notification.models import Notification
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
@@ -46,6 +48,7 @@ def recieved_requests(request):
 @extend_schema(
     summary="Accept Chat Request",
     description="Accept a pending chat request and create a conversation.",
+    request=None,
     responses={
         200: inline_serializer(
             name="AcceptChatResponse",
@@ -79,7 +82,15 @@ def accept_request(request, pk):
             "message": "Request not found or already processed."
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    conversation = chat_request.accept() 
+    with transaction.atomic():
+        conversation = chat_request.accept()
+        Notification.objects.create(
+            recipient=chat_request.from_user,
+            actor=request.user,
+            notification_type="chat_request_accepted",
+            message=f"{request.user} accepted your chat request.",
+            is_read=False,
+        )
 
     return Response({
         "message": "Requested accepted successfully.", 
@@ -90,6 +101,7 @@ def accept_request(request, pk):
 @extend_schema(
     summary="Reject Chat Request",
     description="Reject a pending chat request.",
+    request=None,
     responses={
         200: inline_serializer(
             name="RejectChatResponse",
@@ -120,7 +132,15 @@ def reject_request(request, pk):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    chat_request.reject()
+    with transaction.atomic():
+        chat_request.reject()
+        Notification.objects.create(
+            recipient=chat_request.from_user,
+            actor=request.user,
+            notification_type="chat_request_rejected",
+            message=f"{request.user} rejected your chat request.",
+            is_read=False,
+        )
 
     return Response(
         {"message": "Request rejected successfully."},
