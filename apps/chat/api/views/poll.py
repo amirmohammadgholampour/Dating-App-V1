@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone 
@@ -74,9 +75,8 @@ def poll_messages(request, conversation_id):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    messages = Message.objects.filter(
-        conversation=conversation,
-        sent_at__gt=after_datetime
+    messages = Message.objects.filter(conversation=conversation).filter(
+        Q(sent_at__gt=after_datetime) | Q(edited_at__gt=after_datetime)
     ).exclude(
         sender=request.user
     ).select_related('sender').order_by('sent_at')

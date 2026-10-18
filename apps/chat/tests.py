@@ -1,7 +1,9 @@
+from datetime import timedelta
 from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
 
@@ -72,6 +74,116 @@ class ChatMessageFeatureTests(TestCase):
         )
         self.assertEqual(mismatch.status_code, 404)
         self.assertFalse(other_message.is_pinned)
+
+    def test_sender_can_edit_message_and_edit_metadata_is_returned(self):
+        sent = self._send(self.alice, {"content": "Original"})
+        message_id = sent.data["data"]["id"]
+
+        edited = self.client.patch(
+            f"/api/chat/conversations/{self.conversation.pk}/messages/{message_id}/edit/",
+            {"content": "Updated"},
+            format="json",
+        )
+
+        self.assertEqual(edited.status_code, 200)
+        self.assertEqual(edited.data["content"], "Updated")
+        self.assertTrue(edited.data["is_edited"])
+        self.assertIsNotNone(edited.data["edited_at"])
+        message = Message.objects.get(pk=message_id)
+        self.assertEqual(message.content, "Updated")
+        self.assertTrue(message.is_edited)
+        self.assertIsNotNone(message.edited_at)
+
+    def test_edit_checks_sender_membership_and_conversation(self):
+        message = Message.objects.create(conversation=self.conversation, sender=self.alice, content="Original")
+        edit_url = f"/api/chat/conversations/{self.conversation.pk}/messages/{message.pk}/edit/"
+
+        self.client.force_authenticate(self.bob)
+        recipient_denied = self.client.patch(edit_url, {"content": "Changed"}, format="json")
+        self.assertEqual(recipient_denied.status_code, 403)
+        self.assertEqual(Message.objects.get(pk=message.pk).content, "Original")
+
+        self.client.force_authenticate(self.eve)
+        non_member_denied = self.client.patch(edit_url, {"content": "Changed"}, format="json")
+        self.assertEqual(non_member_denied.status_code, 403)
+
+        other_conversation = Conversation.objects.create(user1=self.bob, user2=self.eve)
+        other_message = Message.objects.create(conversation=other_conversation, sender=self.bob, content="Private")
+        self.client.force_authenticate(self.alice)
+        mismatch = self.client.patch(
+            f"/api/chat/conversations/{self.conversation.pk}/messages/{other_message.pk}/edit/",
+            {"content": "Changed"},
+            format="json",
+        )
+        self.assertEqual(mismatch.status_code, 404)
+        self.assertEqual(Message.objects.get(pk=other_message.pk).content, "Private")
+
+    def test_edit_rejects_invalid_and_protected_fields_and_obeys_blocks(self):
+        message = Message.objects.create(conversation=self.conversation, sender=self.alice, content="Original")
+        edit_url = f"/api/chat/conversations/{self.conversation.pk}/messages/{message.pk}/edit/"
+        self.client.force_authenticate(self.alice)
+
+        blank = self.client.patch(edit_url, {"content": "  "}, format="json")
+        self.assertEqual(blank.status_code, 400)
+        too_long = self.client.patch(edit_url, {"content": "x" * 1001}, format="json")
+        self.assertEqual(too_long.status_code, 400)
+        protected_field = self.client.patch(
+            edit_url,
+            {"content": "Changed", "is_edited": False, "sender": self.bob.pk},
+            format="json",
+        )
+        self.assertEqual(protected_field.status_code, 400)
+        self.assertEqual(Message.objects.get(pk=message.pk).content, "Original")
+
+        Block.objects.create(blocker=self.bob, blocked=self.alice)
+        blocked = self.client.patch(edit_url, {"content": "Changed"}, format="json")
+        self.assertEqual(blocked.status_code, 403)
+        self.assertEqual(Message.objects.get(pk=message.pk).content, "Original")
+
+    def test_attachment_caption_can_be_edited_without_replacing_private_file(self):
+        sent = self._send(
+            self.alice,
+            {"message_type": "file", "attachment": SimpleUploadedFile("notes.pdf", b"%PDF-1.7 content")},
+        )
+        message_id = sent.data["data"]["id"]
+        media_url = sent.data["data"]["attachment_url"]
+
+        edited = self.client.patch(
+            f"/api/chat/conversations/{self.conversation.pk}/messages/{message_id}/edit/",
+            {"content": "Revised caption"},
+            format="json",
+        )
+
+        self.assertEqual(edited.status_code, 200)
+        self.assertEqual(edited.data["content"], "Revised caption")
+        self.assertEqual(edited.data["message_type"], Message.Type.FILE)
+        self.assertEqual(edited.data["attachment_url"], media_url)
+
+    def test_poll_includes_messages_edited_after_the_requested_timestamp(self):
+        message = Message.objects.create(
+            conversation=self.conversation,
+            sender=self.alice,
+            content="Original",
+            sent_at=timezone.now() - timedelta(minutes=10),
+        )
+        after = timezone.now() - timedelta(minutes=1)
+
+        self.client.force_authenticate(self.alice)
+        edited = self.client.patch(
+            f"/api/chat/conversations/{self.conversation.pk}/messages/{message.pk}/edit/",
+            {"content": "Updated after polling cursor"},
+            format="json",
+        )
+        self.assertEqual(edited.status_code, 200)
+
+        self.client.force_authenticate(self.bob)
+        polled = self.client.get(
+            f"/api/chat/conversations/{self.conversation.pk}/poll/",
+            {"after": after.isoformat()},
+        )
+        self.assertEqual(polled.status_code, 200)
+        self.assertEqual([item["id"] for item in polled.data["messages"]], [message.pk])
+        self.assertEqual(polled.data["messages"][0]["content"], "Updated after polling cursor")
 
     def test_image_voice_and_file_uploads_are_typed_and_private(self):
         image_response = self._send(self.alice, {"message_type": "image", "attachment": self._png_upload()})

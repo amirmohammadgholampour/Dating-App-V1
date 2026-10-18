@@ -1,6 +1,6 @@
 from django.urls import path 
 from .views import * 
-from apps.chat.api.views.message_actions import message_attachment, set_message_pinned
+from apps.chat.api.views.message_actions import edit_message, message_attachment, set_message_pinned
 
 urlpatterns = [
     path("conversations/", my_conversations, name="my-conversation"),    
@@ -8,5 +8,6 @@ urlpatterns = [
     path('conversations/<int:conversation_id>/messages/', get_messages, name='get-messages'),
     path('conversations/<int:conversation_id>/poll/', poll_messages, name='poll-messages'),
     path('conversations/<int:conversation_id>/messages/<int:message_id>/pin/', set_message_pinned, name='pin-message'),
+    path('conversations/<int:conversation_id>/messages/<int:message_id>/edit/', edit_message, name='edit-message'),
     path('messages/<int:message_id>/media/', message_attachment, name='chat-message-media'),
 ]

@@ -18,6 +18,7 @@ class MessageSerializer(serializers.ModelSerializer):
             'sent_at',
             'read_at',
             'is_edited',
+            'edited_at',
             'message_type',
             'attachment_name',
             'attachment_url',

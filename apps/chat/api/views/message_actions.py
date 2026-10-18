@@ -1,5 +1,6 @@
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.text import get_valid_filename
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -8,8 +9,45 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.chat.api.serializers.message_serializer import MessageSerializer
+from apps.chat.api.serializers.edit_message_serializer import EditMessageSerializer
 from apps.chat.models import Conversation, Message
 from apps.safety.services import users_are_blocked
+
+
+@extend_schema(
+    summary="Edit a message",
+    description="Replace the text of a text message or the caption of an attachment message. Only its sender may edit it.",
+    request=EditMessageSerializer,
+    responses={
+        200: MessageSerializer,
+        400: OpenApiResponse(description="Validation error."),
+        403: OpenApiResponse(description="The message cannot be edited by this user."),
+        404: OpenApiResponse(description="Conversation or message not found."),
+    },
+    tags=["Chat"],
+)
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def edit_message(request, conversation_id, message_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    if request.user not in (conversation.user1, conversation.user2):
+        return Response({"message": "You are not a member of this conversation."}, status=status.HTTP_403_FORBIDDEN)
+    if users_are_blocked(conversation.user1, conversation.user2):
+        return Response({"message": "This conversation is unavailable because one of these users has blocked the other."}, status=status.HTTP_403_FORBIDDEN)
+
+    message = get_object_or_404(Message, pk=message_id, conversation=conversation)
+    if message.sender_id != request.user.pk:
+        return Response({"message": "Only the sender can edit this message."}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = EditMessageSerializer(data=request.data, context={"message": message})
+    if not serializer.is_valid():
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    message.content = serializer.validated_data["content"]
+    message.is_edited = True
+    message.edited_at = timezone.now()
+    message.save(update_fields=["content", "is_edited", "edited_at"])
+    return Response(MessageSerializer(message, context={"request": request}).data, status=status.HTTP_200_OK)
 
 
 @extend_schema(
