@@ -44,7 +44,10 @@ class ConversationListSerializer(serializers.ModelSerializer):
             return {
                 'content': last.content[:50],
                 'sent_at': last.sent_at,
-                'is_mine': last.sender == self.context.get('request').user
+                'is_mine': last.sender == self.context.get('request').user,
+                'message_type': last.message_type,
+                'is_pinned': last.is_pinned,
+                'attachment_url': f"/api/chat/messages/{last.pk}/media/" if last.attachment else None,
             }
         return None
 

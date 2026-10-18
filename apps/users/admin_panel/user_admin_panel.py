@@ -16,6 +16,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = [
         'phone_number',
         'phone_verified',
+        'is_verified',
         'email',
         'first_name',
         'last_name',
@@ -63,6 +64,7 @@ class UserAdmin(BaseUserAdmin):
                 'gender',
                 'bio',
                 'profile_picture',
+                'is_verified',
                 'last_seen_at',
             )
         }),

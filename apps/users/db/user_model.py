@@ -8,7 +8,15 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _ 
 from django.core.exceptions import PermissionDenied, ValidationError
 from datetime import date
+from pathlib import Path
+from uuid import uuid4
 from apps.users.db.interest_model import Interest
+from apps.utils.private_storage import private_file_storage
+
+
+def identity_video_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    return f"identity_verification/{instance.pk}/{uuid4().hex}{extension}"
 
 class UserManager(BaseUserManager):
     def create_user(self, phone_number=None, password=None, **extra_fields):
@@ -84,6 +92,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("Last name"))
     email = models.EmailField(unique=True, null=True, blank=True, verbose_name=_("Email address"))
     phone_verified = models.BooleanField(default=False, verbose_name=_("Phone verified"))
+    is_verified = models.BooleanField(default=False, verbose_name=_("Identity verified"))
+    identity_video = models.FileField(
+        upload_to=identity_video_upload_to,
+        storage=private_file_storage,
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name=_("Identity verification video"),
+    )
     date_of_birth = models.DateField(null=True, blank=True, verbose_name=_("Date of birth"))
 
     profile_picture = models.ImageField(

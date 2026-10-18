@@ -72,6 +72,7 @@ class ProfileCardSerializer(serializers.ModelSerializer):
             'profile_picture',
             'interests',
             'is_online',
+            'is_verified',
         ]
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))

@@ -15,6 +15,11 @@ from apps.users.api.views.logout_view import logout, logout_all
 from apps.users.api.views.presence_view import heartbeat
 from apps.users.api.views.update_profile_view import update_profile
 from apps.users.api.views.user_profile_view import user_profile
+from apps.users.api.views.verification_view import (
+    admin_identity_video,
+    set_identity_verification,
+    upload_identity_video,
+)
 from apps.utils.custom_rate_limit import custom_ratelimit
 
 
@@ -28,6 +33,9 @@ token_verify_view = custom_ratelimit(
 urlpatterns = [
     path("profile/", user_profile, name="profile"),
     path("update/", update_profile, name="update-profile"),
+    path("verification/video/", upload_identity_video, name="upload-identity-video"),
+    path("admin/users/<int:user_id>/identity-video/", admin_identity_video, name="admin-identity-video"),
+    path("admin/users/<int:user_id>/verification/", set_identity_verification, name="set-identity-verification"),
     path("delete/", delete_account, name="delete-account"),
     path("presence/heartbeat/", heartbeat, name="presence-heartbeat"),
     path("auth/register/email/", email_register, name="user-register-email"),

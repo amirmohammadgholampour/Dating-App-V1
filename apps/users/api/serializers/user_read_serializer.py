@@ -12,7 +12,7 @@ class UserReadSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'phone_number', 'phone_verified', 'first_name', 'last_name', 'date_of_birth',
             'profile_picture', 'age', 'gender', 'city_name', 'province_name', 'bio',
-            'interests', 'is_online', 'last_seen_at'
+            'interests', 'is_online', 'last_seen_at', 'is_verified'
         ]
 
     def get_interests(self, obj):

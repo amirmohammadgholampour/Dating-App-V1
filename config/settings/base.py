@@ -154,4 +154,12 @@ USE_TZ = True
 # ====== Static files ======
 STATIC_URL = 'static/'
 
+# Sensitive uploads are stored separately from MEDIA_ROOT and served only by
+# authenticated, permission-checked API views.
+PRIVATE_MEDIA_ROOT = Path(env('PRIVATE_MEDIA_ROOT', default=str(BASE_DIR / 'private_media')))
+MAX_IDENTITY_VIDEO_SIZE = 50 * 1024 * 1024
+MAX_CHAT_IMAGE_SIZE = 10 * 1024 * 1024
+MAX_CHAT_VOICE_SIZE = 20 * 1024 * 1024
+MAX_CHAT_FILE_SIZE = 25 * 1024 * 1024
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

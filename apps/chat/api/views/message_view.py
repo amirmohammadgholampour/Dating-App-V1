@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParamet
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.message_serializer import MessageSerializer
+from apps.safety.services import users_are_blocked
 
 
 class MessagePagination(PageNumberPagination):
@@ -48,6 +49,12 @@ def get_messages(request, conversation_id):
         return Response(
             {"message": "You are not a member of this conversation."},
             status=status.HTTP_403_FORBIDDEN
+        )
+
+    if users_are_blocked(conversation.user1, conversation.user2):
+        return Response(
+            {"message": "This conversation is unavailable because one of these users has blocked the other."},
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     messages = Message.objects.filter(

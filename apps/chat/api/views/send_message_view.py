@@ -10,30 +10,21 @@ from rest_framework import serializers
 
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.send_message_serializer import SendMessageSerializer
+from apps.chat.api.serializers.message_serializer import MessageSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit
+from apps.safety.services import users_are_blocked
 
 
 @extend_schema(
     summary="Send Message",
-    description="Send a text message in a conversation.",
-    request=inline_serializer(
-        name="SendMessageRequest",
-        fields={"content": serializers.CharField(help_text="Message text")}
-    ),
+    description="Send a text, image, file, or voice message in a conversation. Attachments use multipart form data.",
+    request=SendMessageSerializer,
     responses={
         201: inline_serializer(
             name="SendMessageResponse",
             fields={
                 "message": serializers.CharField(),
-                "data": inline_serializer(
-                    name="MessageData",
-                    fields={
-                        "id": serializers.IntegerField(),
-                        "content": serializers.CharField(),
-                        "sender_id": serializers.IntegerField(),
-                        "sent_at": serializers.CharField(),
-                    }
-                )
+                "data": MessageSerializer,
             }
         ),
         400: OpenApiResponse(description="Validation error"),
@@ -61,6 +52,13 @@ def send_message(request, conversation_id):
             status=status.HTTP_403_FORBIDDEN
         )
 
+    recipient = conversation.get_other_user(request.user)
+    if users_are_blocked(request.user, recipient):
+        return Response(
+            {"message": "Messaging is unavailable because one of these users has blocked the other."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     serializer = SendMessageSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(
@@ -68,20 +66,13 @@ def send_message(request, conversation_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    message = Message.objects.create(
-        conversation=conversation,
-        sender=request.user,
-        content=serializer.validated_data['content']
-    )
+    message = serializer.save(conversation=conversation, sender=request.user)
 
     return Response(
         {
             "message": "Message sent successfully.",
             "data": {
-                "id": message.id,
-                "content": message.content,
-                "sender_id": message.sender_id,
-                "sent_at": message.sent_at,
+                **MessageSerializer(message, context={"request": request}).data,
             }
         },
         status=status.HTTP_201_CREATED

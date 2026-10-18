@@ -12,6 +12,8 @@ from apps.matching.models import ChatRequest
 from apps.matching.api.serializers.chat_request_serializer import ReceivedRequestSerializer 
 from apps.notification.models import Notification
 from apps.utils.custom_rate_limit import custom_ratelimit
+from apps.safety.models import Block
+from apps.safety.services import users_are_blocked
 
 
 @extend_schema(
@@ -32,10 +34,12 @@ def recieved_requests(request):
     Returns all pending chat requests sent TO the current user.
     """
     user = request.user 
+    blocked_ids = set(Block.objects.filter(blocker=user).values_list("blocked_id", flat=True))
+    blocked_ids.update(Block.objects.filter(blocked=user).values_list("blocker_id", flat=True))
     chat_requests = ChatRequest.objects.filter(
         to_user = user, 
         status = "pending" 
-    ).select_related("from_user", "from_user__city").order_by("-created_at")
+    ).exclude(from_user_id__in=blocked_ids).select_related("from_user", "from_user__city").order_by("-created_at")
 
     serializer = ReceivedRequestSerializer(chat_requests, many=True) 
     return Response({
@@ -81,6 +85,12 @@ def accept_request(request, pk):
         return Response({
             "message": "Request not found or already processed."
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    if users_are_blocked(chat_request.from_user, chat_request.to_user):
+        return Response(
+            {"message": "This request cannot be accepted because one of these users has blocked the other."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
     
     with transaction.atomic():
         conversation = chat_request.accept()

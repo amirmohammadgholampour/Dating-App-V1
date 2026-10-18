@@ -13,6 +13,7 @@ from rest_framework import serializers
 from apps.chat.models import Conversation, Message
 from apps.chat.api.serializers.message_serializer import MessageSerializer
 from apps.utils.custom_rate_limit import custom_ratelimit
+from apps.safety.services import users_are_blocked
 
 
 @extend_schema(
@@ -65,6 +66,12 @@ def poll_messages(request, conversation_id):
         return Response(
             {"message": "You are not a member of this conversation."},
             status=status.HTTP_403_FORBIDDEN
+        )
+
+    if users_are_blocked(conversation.user1, conversation.user2):
+        return Response(
+            {"message": "This conversation is unavailable because one of these users has blocked the other."},
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     messages = Message.objects.filter(

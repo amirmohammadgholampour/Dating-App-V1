@@ -66,7 +66,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
     def to_internal_value(self, data):
-        credential_fields = {'email', 'phone_number', 'phone_verified', 'password'}
+        credential_fields = {'email', 'phone_number', 'phone_verified', 'password', 'is_verified', 'identity_video'}
         attempted_changes = credential_fields.intersection(data.keys())
         if attempted_changes:
             field = sorted(attempted_changes)[0]
